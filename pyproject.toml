@@ -20,6 +20,7 @@ dependencies = [
     "xxhash",
     "pytest",
     "pytest-asyncio",
+    "python-multipart>=0.0.20",
 ]
 
 [tool.pytest.ini_options]
