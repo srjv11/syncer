@@ -163,7 +163,7 @@ def start(config: str, verbose: bool) -> None:
             for task in asyncio.all_tasks(loop):
                 if not task.done():
                     task.cancel()
-            stop_task = loop.create_task(client.stop())
+            loop.create_task(client.stop())
             loop.stop()
 
         # Set up signal handlers for graceful shutdown

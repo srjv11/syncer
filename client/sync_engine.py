@@ -16,16 +16,11 @@ from websockets.exceptions import ConnectionClosed, InvalidStatusCode
 from shared.compression import CompressionUtil
 from shared.diff import DifferentialSync
 from shared.exceptions import ConnectionError as SyncConnectionError
-from shared.exceptions import (
-    DiskSpaceError,
-    FileOperationError,
-    ServerError,
-    WebSocketError,
-)
-from shared.exceptions import (
-    FileNotFoundError as SyncFileNotFoundError,
-)
+from shared.exceptions import DiskSpaceError
+from shared.exceptions import FileNotFoundError as SyncFileNotFoundError
+from shared.exceptions import FileOperationError
 from shared.exceptions import PermissionError as SyncPermissionError
+from shared.exceptions import ServerError, WebSocketError
 from shared.metrics import (
     increment_counter,
     record_histogram,
@@ -459,7 +454,7 @@ class SyncEngine:
             if self.session:
                 async with self.session.get(url, headers=headers) as response:
                     if response.status in (200, 206):  # 206 for partial content
-                        async with aiofiles.open(local_path, mode) as f:
+                        async with aiofiles.open(str(local_path), mode) as f:
                             async for chunk in response.content.iter_chunked(8192):
                                 await f.write(chunk)
                         logger.info(f"Downloaded file: {file_path}")
