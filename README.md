@@ -13,6 +13,11 @@ A Python-based file synchronization system for local networks with real-time bid
 - **Configurable ignore patterns**: Exclude files and directories from sync
 - **SQLite metadata tracking**: File versioning and sync history
 - **CLI interface**: Easy-to-use command-line tools
+- **File compression**: Smart compression with gzip, zlib, and lz4 support
+- **Differential sync**: Efficient large file synchronization
+- **Performance metrics**: Built-in monitoring and statistics
+- **Type safety**: Full Pydantic and MyPy integration
+- **Comprehensive testing**: Unit, integration, and end-to-end test suites
 
 ## Architecture
 
@@ -38,7 +43,17 @@ A Python-based file synchronization system for local networks with real-time bid
 ## Installation
 
 1. Clone or download the project
-2. Install dependencies:
+2. Install dependencies using UV:
+
+```bash
+# Install UV if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+uv sync
+```
+
+Or using pip with the traditional requirements file:
 
 ```bash
 pip install -r requirements.txt
@@ -49,6 +64,10 @@ pip install -r requirements.txt
 ### 1. Start the Server
 
 ```bash
+# Using UV
+uv run python -m server.main
+
+# Or using python directly
 python -m server.main
 ```
 
@@ -57,12 +76,20 @@ The server will start on `http://localhost:8000` by default.
 ### 2. Initialize a Client
 
 ```bash
+# Using UV
+uv run python -m client.main init --name "my-client" --sync-dir "./my-sync-folder"
+
+# Or using python directly
 python -m client.main init --name "my-client" --sync-dir "./my-sync-folder"
 ```
 
 ### 3. Start the Client
 
 ```bash
+# Using UV
+uv run python -m client.main start
+
+# Or using python directly
 python -m client.main start
 ```
 
@@ -73,6 +100,10 @@ python -m client.main start
 Start the server:
 
 ```bash
+# Using UV
+uv run python -m server.main
+
+# Or using python directly
 python -m server.main
 ```
 
@@ -91,18 +122,30 @@ The server provides the following endpoints:
 Initialize client configuration:
 
 ```bash
+# Using UV
+uv run python -m client.main init
+
+# Or using python directly
 python -m client.main init
 ```
 
 Start the sync client:
 
 ```bash
+# Using UV
+uv run python -m client.main start [--config config.yaml] [--verbose]
+
+# Or using python directly
 python -m client.main start [--config config.yaml] [--verbose]
 ```
 
 Check client status:
 
 ```bash
+# Using UV
+uv run python -m client.main status [--config config.yaml]
+
+# Or using python directly
 python -m client.main status [--config config.yaml]
 ```
 
@@ -186,23 +229,67 @@ node_modules/
 ├── shared/             # Shared components
 │   ├── models.py       # Data models
 │   ├── utils.py        # Common utilities
-│   └── protocols.py    # WebSocket protocols
-└── requirements.txt    # Python dependencies
+│   ├── protocols.py    # WebSocket protocols
+│   ├── compression.py  # File compression utilities
+│   ├── diff.py         # Differential sync algorithms
+│   ├── metrics.py      # Performance monitoring
+│   └── exceptions.py   # Custom exception classes
+├── tests/              # Test suite
+│   ├── unit/           # Unit tests
+│   ├── integration/    # Integration tests
+│   ├── e2e/            # End-to-end tests
+│   └── conftest.py     # Test configuration
+├── docs/               # Documentation
+├── pyproject.toml      # Project configuration (UV)
+├── requirements.txt    # Python dependencies (pip)
+└── .pre-commit-config.yaml  # Code quality hooks
 ```
 
 ### Running Tests
 
-(Tests would be implemented in a `tests/` directory)
+The project includes comprehensive unit, integration, and end-to-end tests:
 
 ```bash
-pytest tests/
+# Using UV
+uv run pytest
+
+# Run only unit tests
+uv run pytest tests/unit/
+
+# Run with coverage
+uv run pytest --cov=shared --cov=client --cov=server
+
+# Or using python directly
+pytest
 ```
+
+### Development Tools
+
+Install pre-commit hooks for code quality:
+
+```bash
+# Using UV
+uv run pre-commit install
+
+# Run all pre-commit checks
+uv run pre-commit run --all-files
+```
+
+The project uses:
+- **Ruff**: Linting and formatting
+- **MyPy**: Type checking
+- **Bandit**: Security scanning
+- **Pytest**: Testing framework
 
 ### Logging
 
 Enable verbose logging for debugging:
 
 ```bash
+# Using UV
+uv run python -m client.main start --verbose
+
+# Or using python directly
 python -m client.main start --verbose
 ```
 
@@ -210,9 +297,19 @@ python -m client.main start --verbose
 
 - Basic conflict resolution (timestamp-based only)
 - No authentication/authorization (planned feature)
-- No file compression (planned feature)
 - No incremental sync for large files (planned feature)
 - No file versioning/history (beyond sync logs)
+
+## Current Features
+
+✅ **Implemented:**
+- File compression (gzip, zlib, lz4) with smart compression decisions
+- Comprehensive test suite (unit, integration, e2e)
+- Type safety with Pydantic models and MyPy
+- Development tools (pre-commit hooks, linting, formatting)
+- Performance monitoring and metrics collection
+- Cross-platform path handling
+- Differential sync capabilities for large files
 
 ## Contributing
 
