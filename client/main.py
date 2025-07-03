@@ -87,6 +87,21 @@ class SyncClient:
     async def run(self) -> None:
         """Run the sync client until interrupted."""
         try:
+            # Set up signal handlers in the async context
+            loop = asyncio.get_running_loop()
+
+            def signal_handler(sig: int) -> None:
+                logger.info(f"Received shutdown signal {sig}")
+                self.running = False
+                # Cancel all tasks
+                for task in asyncio.all_tasks(loop):
+                    if not task.done() and task != asyncio.current_task():
+                        task.cancel()
+
+            # Set up signal handlers for graceful shutdown
+            for sig in (signal.SIGTERM, signal.SIGINT):
+                loop.add_signal_handler(sig, functools.partial(signal_handler, sig))
+
             await self.start()
 
             # Keep running until explicitly stopped
@@ -153,22 +168,6 @@ def start(config: str, verbose: bool) -> None:
             for error in e.errors():
                 logger.exception(f"  {error['loc'][0]}: {error['msg']}")
             sys.exit(1)
-
-        # Handle graceful shutdown with proper async signal handling
-        loop = asyncio.get_event_loop()
-
-        def signal_handler(sig: int) -> None:
-            logger.info(f"Received shutdown signal {sig}")
-            # Schedule graceful shutdown
-            for task in asyncio.all_tasks(loop):
-                if not task.done():
-                    task.cancel()
-            loop.create_task(client.stop())
-            loop.stop()
-
-        # Set up signal handlers for graceful shutdown
-        for sig in (signal.SIGTERM, signal.SIGINT):
-            loop.add_signal_handler(sig, functools.partial(signal_handler, sig))
 
         # Run the client with proper exception handling
         try:
