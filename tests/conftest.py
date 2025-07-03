@@ -296,14 +296,14 @@ async def create_test_file(
     mode = "wb" if binary else "w"
     data = content.encode() if binary else content
 
-    async with aiofiles.open(path, mode) as f:
+    async with aiofiles.open(str(path), mode) as f:
         await f.write(data)
 
 
 async def read_test_file(path: Path, binary: bool = False) -> str | bytes:
     """Helper to read test files."""
     mode = "rb" if binary else "r"
-    async with aiofiles.open(path, mode) as f:
+    async with aiofiles.open(str(path), mode) as f:
         return await f.read()
 
 

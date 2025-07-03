@@ -1,5 +1,6 @@
 """Unit tests for shared models."""
 
+import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -287,19 +288,21 @@ class TestServerConfig:
 
     def test_server_config_custom_values(self):
         """Test ServerConfig with custom values."""
-        config = ServerConfig(
-            host="0.0.0.0",
-            port=9000,
-            sync_directory="/var/lib/sync",
-            max_file_size=50 * 1024 * 1024,
-            allowed_extensions=[".txt", ".py"],
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            custom_sync_dir = os.path.join(temp_dir, "custom_sync")
+            config = ServerConfig(
+                host="0.0.0.0",
+                port=9000,
+                sync_directory=custom_sync_dir,
+                max_file_size=50 * 1024 * 1024,
+                allowed_extensions=[".txt", ".py"],
+            )
 
-        assert config.host == "0.0.0.0"
-        assert config.port == 9000
-        assert config.sync_directory.endswith("/var/lib/sync")
-        assert config.max_file_size == 50 * 1024 * 1024
-        assert config.allowed_extensions == [".txt", ".py"]
+            assert config.host == "0.0.0.0"
+            assert config.port == 9000
+            assert config.sync_directory == custom_sync_dir
+            assert config.max_file_size == 50 * 1024 * 1024
+            assert config.allowed_extensions == [".txt", ".py"]
 
     def test_server_config_validation_host(self):
         """Test ServerConfig host validation."""
@@ -439,7 +442,7 @@ class TestClientConfig:
         """Test ClientConfig ignore patterns validation."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Non-list patterns
-            with pytest.raises(ValidationError, match="Ignore patterns must be a list"):
+            with pytest.raises(ValidationError, match="Input should be a valid list"):
                 ClientConfig(
                     client_name="test",
                     sync_directory=temp_dir,
@@ -497,7 +500,7 @@ class TestModelSerialization:
         )
 
         # Convert to dict
-        data = file_info.dict()
+        data = file_info.model_dump()
 
         assert data["path"] == "test.txt"
         assert data["size"] == 100
@@ -522,7 +525,7 @@ class TestModelSerialization:
         request = SyncRequest(client_id="client123", files=files, sync_root="/sync")
 
         # Convert to JSON
-        json_data = request.json()
+        json_data = request.model_dump_json()
         assert isinstance(json_data, str)
 
         # Parse JSON

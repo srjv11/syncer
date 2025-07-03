@@ -35,7 +35,7 @@ class TestCompressionUtil:
 
     def test_compress_data_gzip(self):
         """Test compression with GZIP."""
-        data = b"Hello, World! This is a test string for compression."
+        data = b"Hello, World! This is a test string for compression. " * 20
         compressed, comp_type = CompressionUtil.compress_data(
             data, CompressionType.GZIP
         )
@@ -49,7 +49,7 @@ class TestCompressionUtil:
 
     def test_compress_data_zlib(self):
         """Test compression with ZLIB."""
-        data = b"Hello, World! This is a test string for compression."
+        data = b"Hello, World! This is a test string for compression. " * 20
         compressed, comp_type = CompressionUtil.compress_data(
             data, CompressionType.ZLIB
         )
@@ -229,8 +229,8 @@ class TestCompressionUtil:
     def test_should_compress_unknown_formats(self):
         """Test compression decision for unknown formats."""
         # Unknown extension, use default threshold
-        assert CompressionUtil.should_compress(1023) is False
-        assert CompressionUtil.should_compress(1024) is True
+        assert CompressionUtil.should_compress(1023, "file.unknown") is False
+        assert CompressionUtil.should_compress(1024, "file.xyz") is True
 
         # No extension
         assert CompressionUtil.should_compress(2000, "README") is True

@@ -2,7 +2,7 @@
 
 import hashlib
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -71,9 +71,18 @@ class TestChecksumCalculation:
         with open(test_file, "w") as f:
             f.write(content)
 
-        with patch("shared.utils.xxhash") as mock_xxhash:
-            mock_hasher = mock_xxhash.xxh64.return_value
+        with patch("builtins.__import__") as mock_import:
+            mock_xxhash = Mock()
+            mock_hasher = Mock()
             mock_hasher.hexdigest.return_value = "fast_hash_result"
+            mock_xxhash.xxh64.return_value = mock_hasher
+
+            def side_effect(name, *args, **kwargs):
+                if name == "xxhash":
+                    return mock_xxhash
+                return __import__(name, *args, **kwargs)
+
+            mock_import.side_effect = side_effect
 
             checksum = await calculate_file_checksum_fast(str(test_file))
             assert checksum == "fast_hash_result"
@@ -87,7 +96,15 @@ class TestChecksumCalculation:
         with open(test_file, "w") as f:
             f.write(content)
 
-        with patch("shared.utils.xxhash", side_effect=ImportError):
+        with patch("builtins.__import__") as mock_import:
+
+            def side_effect(name, *args, **kwargs):
+                if name == "xxhash":
+                    raise ImportError("xxhash not available")
+                return __import__(name, *args, **kwargs)
+
+            mock_import.side_effect = side_effect
+
             checksum = await calculate_file_checksum_fast(str(test_file))
             expected = hashlib.sha256(content.encode()).hexdigest()
             assert checksum == expected

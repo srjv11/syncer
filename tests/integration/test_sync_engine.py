@@ -8,7 +8,7 @@ import aiohttp
 import pytest
 
 from client.sync_engine import SyncEngine
-from shared.exceptions import NetworkError, SyncError
+from shared.exceptions import ConnectionError, SyncError
 from shared.models import FileInfo, SyncResponse
 
 
@@ -304,7 +304,7 @@ class TestSyncEngineIntegration:
             "post",
             side_effect=aiohttp.ClientError("Network error"),
         ):
-            with pytest.raises(NetworkError):
+            with pytest.raises(ConnectionError):
                 await sync_engine.upload_file("test.txt", "remote.txt")
 
     @pytest.mark.integration
