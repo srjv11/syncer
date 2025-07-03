@@ -4,4 +4,23 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "aiohttp",
+    "pydantic",
+    "pyyaml",
+    "websockets",
+    "click",
+    "watchdog",
+    "aiosqlite",
+    "aiofiles",
+    "psutil",
+    "lz4",
+    "xxhash",
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
