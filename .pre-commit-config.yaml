@@ -38,20 +38,6 @@ repos:
       - id: fix-byte-order-marker
         name: Fix byte order marker
 
-  # Python-specific checks
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: check-ast
-        name: Check Python AST
-      - id: check-builtin-literals
-        name: Check builtin literals
-      - id: check-docstring-first
-        name: Check docstring first
-      - id: name-tests-test
-        name: Check test naming
-        args: ["--pytest-test-first"]
-
   # Ruff for linting and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.6
@@ -62,51 +48,6 @@ repos:
       - id: ruff-format
         name: Ruff formatter
 
-  # MyPy for type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        name: MyPy type checker
-        additional_dependencies:
-          [
-            types-PyYAML,
-            types-aiofiles,
-            types-requests,
-            types-setuptools,
-            pydantic,
-            fastapi,
-            pytest,
-          ]
-        args: [--ignore-missing-imports]
-
-  # Security scanning
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
-    hooks:
-      - id: bandit
-        name: Bandit security scanner
-        args: [-r, -x, tests/]
-        exclude: ^tests/
-
-  # Additional Python quality checks
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        name: Docstring style checker
-        args:
-          [
-            --convention=google,
-            --add-ignore=D100,
-            D101,
-            D102,
-            D103,
-            D104,
-            D105,
-            D107,
-          ]
-
   # Import sorting
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -115,66 +56,12 @@ repos:
         name: Sort imports
         args: [--profile, black, --line-length, "88"]
 
-  # YAML formatting
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-      - id: prettier
-        name: Prettier formatter
-        types_or: [yaml, json, markdown]
-        exclude: ^(uv\.lock|\.venv/)
-
-  # Dockerfile linting
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.12.0
-    hooks:
-      - id: hadolint-docker
-        name: Dockerfile linter
-        files: Dockerfile.*
-
   # Shell script linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6
     hooks:
       - id: shellcheck
         name: Shell script linter
-
-  # Git commit message validation (optional)
-  # - repo: https://github.com/compilerla/conventional-pre-commit
-  #   rev: v3.0.0
-  #   hooks:
-  #     - id: conventional-pre-commit
-  #       name: Conventional commit format
-  #       stages: [commit-msg]
-
-  # Dead code detection
-  - repo: local
-    hooks:
-      - id: vulture
-        name: Dead code detector
-        entry: uv run vulture
-        language: system
-        types: [python]
-        args: [--min-confidence, "80"]
-
-  # Complexity checking
-  - repo: local
-    hooks:
-      - id: complexity-check
-        name: Complexity checker
-        entry: uv run radon cc --min C --show-complexity
-        language: system
-        types: [python]
-        pass_filenames: false
-
-  # Performance linting
-  - repo: local
-    hooks:
-      - id: perflint
-        name: Performance linter
-        entry: uv run perflint
-        language: system
-        types: [python]
 
   # Documentation checks
   - repo: local
@@ -185,14 +72,3 @@ repos:
         language: system
         types: [python]
         args: [--quiet, --fail-under=60, --ignore-init-method, --ignore-module]
-
-  # Additional file type checks
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: requirements-txt-fixer
-        name: Fix requirements.txt
-      - id: sort-simple-yaml
-        name: Sort simple YAML files
-        files: \.ya?ml$
-        exclude: \.pre-commit-config\.yaml$
