@@ -24,3 +24,12 @@ dependencies = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "interrogate>=1.7.0",
+    "perflint>=0.8.1",
+    "pre-commit>=4.2.0",
+    "radon>=6.0.1",
+    "vulture>=2.14",
+]
