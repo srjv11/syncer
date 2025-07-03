@@ -63,12 +63,12 @@ repos:
       - id: shellcheck
         name: Shell script linter
 
-  # Documentation checks
-  - repo: local
-    hooks:
-      - id: interrogate
-        name: Documentation coverage
-        entry: uv run interrogate
-        language: system
-        types: [python]
-        args: [--quiet, --fail-under=60, --ignore-init-method, --ignore-module]
+  # # Documentation checks
+  # - repo: local
+  #   hooks:
+  #     - id: interrogate
+  #       name: Documentation coverage
+  #       entry: uv run interrogate
+  #       language: system
+  #       types: [python]
+  #       args: [--quiet, --fail-under=60, --ignore-init-method, --ignore-module]

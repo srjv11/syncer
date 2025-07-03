@@ -138,7 +138,9 @@ def should_ignore_file(file_path: str, ignore_patterns: List[str]) -> bool:
 
 def normalize_path(path: str) -> str:
     """Normalize file path for cross-platform compatibility."""
-    return str(Path(path).as_posix())
+    # Replace backslashes with forward slashes for cross-platform compatibility
+    normalized = path.replace("\\", "/")
+    return str(Path(normalized).as_posix())
 
 
 async def copy_file_async(src: str, dst: str, chunk_size: int = 65536) -> None:

@@ -67,12 +67,11 @@ class CompressionUtil:
     @staticmethod
     def should_compress(data_size: int, file_type: Optional[str] = None) -> bool:
         """Determine if data should be compressed based on size and type (enhanced)."""
-        # Don't compress very small files (overhead not worth it)
-        if data_size < 512:  # 512 bytes
-            return False
-
-        # Don't compress already compressed formats
+        # Handle file type specific logic first
         if file_type:
+            file_lower = file_type.lower()
+
+            # Don't compress already compressed formats
             compressed_extensions = {
                 # Archives
                 ".zip",
@@ -123,11 +122,10 @@ class CompressionUtil:
                 ".zst",
                 ".br",
             }
-            file_lower = file_type.lower()
             if any(file_lower.endswith(ext) for ext in compressed_extensions):
                 return False
 
-            # Highly compressible text formats - always compress if large enough
+            # Highly compressible text formats - allow compression at lower threshold
             text_extensions = {
                 ".txt",
                 ".log",
@@ -155,8 +153,14 @@ class CompressionUtil:
             if any(file_lower.endswith(ext) for ext in text_extensions):
                 return data_size >= 256  # Even smaller text files benefit
 
-        # For unknown file types, compress if reasonably sized
-        return data_size >= 1024  # 1KB
+            # For known but unknown file types, use higher threshold
+            return data_size >= 1024  # 1KB
+
+        # For files with no type info, use basic threshold
+        if data_size < 512:  # 512 bytes
+            return False
+
+        return data_size >= 512  # Compress if >= 512 bytes
 
     @staticmethod
     def get_compression_ratio(original_size: int, compressed_size: int) -> float:

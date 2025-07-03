@@ -15,7 +15,7 @@ class SyncOperation(str, Enum):
 
 class FileInfo(BaseModel):
     path: str
-    size: int
+    size: int = Field(ge=0)  # Size must be >= 0
     checksum: str
     modified_time: datetime
     is_directory: bool = False
