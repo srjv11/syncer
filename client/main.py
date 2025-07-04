@@ -134,7 +134,9 @@ def load_config(config_path: str) -> ClientConfig:
 
         config_file.parent.mkdir(parents=True, exist_ok=True)
         with config_file.open("w") as f:
-            yaml.dump(default_config.dict(), f, default_flow_style=False)
+            yaml.dump(
+                default_config.model_dump(mode="json"), f, default_flow_style=False
+            )
 
         logger.info(f"Created default config at: {config_file}")
         return default_config
@@ -206,7 +208,7 @@ def init(
         config_file.parent.mkdir(parents=True, exist_ok=True)
 
         with config_file.open("w") as f:
-            yaml.dump(config_data.dict(), f, default_flow_style=False)
+            yaml.dump(config_data.model_dump(mode="json"), f, default_flow_style=False)
 
         click.echo(f"Configuration saved to: {config_file}")
     except ValidationError as e:

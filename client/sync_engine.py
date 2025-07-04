@@ -10,8 +10,6 @@ from typing import Any, Dict, List, Optional
 
 import aiofiles
 import aiohttp
-import websockets
-from websockets.exceptions import ConnectionClosed, InvalidStatusCode
 
 from shared.compression import CompressionUtil
 from shared.diff import DifferentialSync
@@ -94,8 +92,10 @@ class SyncEngine:
         self.session = aiohttp.ClientSession(connector=connector, timeout=timeout)
 
         with timer("sync_engine_startup"):
-            await self._connect_websocket()
             await self._register_client()
+            # Small delay to ensure registration is processed
+            await asyncio.sleep(0.1)
+            await self._connect_websocket()
             self.heartbeat_task = asyncio.create_task(self._heartbeat_loop())
 
         increment_counter("sync_engine_starts")
@@ -127,9 +127,12 @@ class SyncEngine:
     async def _connect_websocket(self) -> None:
         """Connect to server WebSocket with retry logic."""
         ws_url = f"ws://{self.config.server_host}:{self.config.server_port}/ws/{self.client_id}"
+        logger.info(f"Attempting WebSocket connection to: {ws_url}")
+        logger.info(f"Client ID: {self.client_id}")
 
         try:
-            self.websocket = await websockets.connect(ws_url)
+            if self.session:
+                self.websocket = await self.session.ws_connect(ws_url)
             self.is_connected = True
             self._reconnect_attempts = 0  # Reset on successful connection
 
@@ -143,12 +146,12 @@ class SyncEngine:
 
             message = WebSocketMessage(
                 type=MessageType.CLIENT_CONNECT,
-                data=connection_req.dict(),
+                data=connection_req.model_dump(mode="json"),
                 client_id=self.client_id,
                 timestamp=datetime.now().isoformat(),
             )
 
-            await self.websocket.send(json.dumps(message.dict()))
+            await self.websocket.send_str(json.dumps(message.model_dump(mode="json")))
 
             # Start listening for messages
             self._listen_task = asyncio.create_task(self._listen_websocket())
@@ -167,13 +170,20 @@ class SyncEngine:
         """Listen for WebSocket messages from server."""
         try:
             if self.websocket:
-                async for message in self.websocket:
-                    try:
-                        data = json.loads(message)
-                        await self._handle_websocket_message(data)
-                    except json.JSONDecodeError:
-                        logger.exception("Invalid JSON received")
-        except (ConnectionClosed, InvalidStatusCode) as e:
+                async for msg in self.websocket:
+                    if msg.type == aiohttp.WSMsgType.TEXT:
+                        try:
+                            data = json.loads(msg.data)
+                            await self._handle_websocket_message(data)
+                        except json.JSONDecodeError:
+                            logger.exception("Invalid JSON received")
+                    elif msg.type == aiohttp.WSMsgType.ERROR:
+                        logger.error(f"WebSocket error: {self.websocket.exception()}")
+                        break
+                    elif msg.type == aiohttp.WSMsgType.CLOSE:
+                        logger.info("WebSocket connection closed by server")
+                        break
+        except Exception as e:
             logger.warning(f"WebSocket connection lost: {e}")
             self.is_connected = False
             if self._should_reconnect:
@@ -297,12 +307,14 @@ class SyncEngine:
 
                     message = WebSocketMessage(
                         type=MessageType.HEARTBEAT,
-                        data=heartbeat.dict(),
+                        data=heartbeat.model_dump(mode="json"),
                         client_id=self.client_id,
                         timestamp=datetime.now().isoformat(),
                     )
 
-                    await self.websocket.send(json.dumps(message.dict()))
+                    await self.websocket.send_str(
+                        json.dumps(message.model_dump(mode="json"))
+                    )
 
                 await asyncio.sleep(30)  # Send heartbeat every 30 seconds
             except Exception:
@@ -337,8 +349,10 @@ class SyncEngine:
                         client_id=self.client_id,
                         timestamp=datetime.now().isoformat(),
                     )
-                    await self.websocket.send(json.dumps(message.dict()))
-                except (ConnectionClosed, InvalidStatusCode):
+                    await self.websocket.send_str(
+                        json.dumps(message.model_dump(mode="json"))
+                    )
+                except Exception:
                     logger.exception("WebSocket connection lost while sending")
                     self.is_connected = False
                     if self._should_reconnect:
@@ -552,7 +566,9 @@ class SyncEngine:
 
         try:
             if self.session:
-                async with self.session.post(url, json=sync_request.dict()) as response:
+                async with self.session.post(
+                    url, json=sync_request.model_dump(mode="json")
+                ) as response:
                     if response.status == HTTP_OK:
                         sync_response = SyncResponse(**(await response.json()))
 

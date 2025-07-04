@@ -133,7 +133,10 @@ class WebSocketManager:
                 )
                 await self.send_message(
                     client_id,
-                    {"type": MessageType.CLIENT_CONNECT, "data": response.dict()},
+                    {
+                        "type": MessageType.CLIENT_CONNECT,
+                        "data": response.model_dump(mode="json"),
+                    },
                 )
 
                 # Notify other clients

@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import json
 import logging
 import signal
 from datetime import datetime
@@ -8,7 +9,7 @@ from typing import Any, Dict
 
 import aiofiles
 import uvicorn
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket
 from fastapi.responses import StreamingResponse
 
 from shared.compression import CompressionType, CompressionUtil
@@ -26,6 +27,10 @@ from shared.utils import ensure_directory, get_file_info
 from .file_manager import FileManager
 from .websocket_manager import WebSocketManager
 
+# Configure logging with timestamps
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -50,7 +55,7 @@ class SyncServer:
             self.clients[client_info.client_id] = client_info
             await self.websocket_manager.broadcast_to_others(
                 client_info.client_id,
-                {"type": "client_joined", "client": client_info.dict()},
+                {"type": "client_joined", "client": client_info.model_dump()},
             )
             return {"success": True, "message": "Client registered successfully"}
 
@@ -268,15 +273,50 @@ class SyncServer:
 
         # WebSocket endpoint
         @self.app.websocket("/ws/{client_id}")
-        async def websocket_endpoint(websocket, client_id: str):
-            await self.websocket_manager.websocket_endpoint(websocket, client_id)
+        async def websocket_endpoint(websocket: WebSocket, client_id: str):
+            logger.info(f"WebSocket connection attempt for client_id: {client_id}")
+            logger.info(f"Registered clients: {list(self.clients.keys())}")
+
+            # Accept the connection first, then validate
+            await websocket.accept()
+
+            # Check if client is registered
+            if client_id not in self.clients:
+                logger.warning(f"Client {client_id} not found in registered clients")
+                await websocket.close(code=1008, reason="Client not registered")
+                return
+
+            logger.info(f"Client {client_id} found, proceeding with WebSocket handling")
+
+            # Remove the websocket from active connections if it exists to prevent duplicates
+            if client_id in self.websocket_manager.active_connections:
+                del self.websocket_manager.active_connections[client_id]
+
+            # Add to active connections and handle messages
+            self.websocket_manager.active_connections[client_id] = websocket
+
+            try:
+                while True:
+                    data = await websocket.receive_text()
+                    message_data = json.loads(data)
+                    await self.websocket_manager.handle_message(client_id, message_data)
+            except Exception as e:
+                logger.exception(f"WebSocket error for client {client_id}: {e}")
+                self.websocket_manager.disconnect(client_id)
 
     async def start(self) -> None:
         # Initialize database
         await self.file_manager._init_database()
 
         config = uvicorn.Config(
-            self.app, host=self.config.host, port=self.config.port, log_level="info"
+            self.app,
+            host=self.config.host,
+            port=self.config.port,
+            log_level="info",
+            reload=True,
+        )
+        logger.warning(
+            "Server starting with hot reload enabled - DO NOT use in production!"
         )
         server = uvicorn.Server(config)
 
