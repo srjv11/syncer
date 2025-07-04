@@ -161,4 +161,9 @@ test_downloads/
 
 # Claude
 .claude/**
+
+# Ignore generate config file
 config.yaml
+
+# Ignore Sync folder files
+/my-sync-folder
