@@ -262,7 +262,9 @@ class SyncEngine:
         url = f"http://{self.config.server_host}:{self.config.server_port}/register"
         try:
             if self.session:
-                async with self.session.post(url, json=client_info.dict()) as response:
+                async with self.session.post(
+                    url, json=client_info.model_dump(mode="json")
+                ) as response:
                     if response.status == HTTP_OK:
                         logger.info("Client registered successfully")
                     else:
