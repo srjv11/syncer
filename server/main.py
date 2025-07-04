@@ -267,9 +267,9 @@ class SyncServer:
                 raise HTTPException(status_code=500, detail=str(e))
 
         # WebSocket endpoint
-        self.app.websocket_route("/ws/{client_id}")(
-            self.websocket_manager.websocket_endpoint
-        )
+        @self.app.websocket("/ws/{client_id}")
+        async def websocket_endpoint(websocket, client_id: str):
+            await self.websocket_manager.websocket_endpoint(websocket, client_id)
 
     async def start(self) -> None:
         # Initialize database
